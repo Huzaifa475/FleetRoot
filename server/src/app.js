@@ -18,6 +18,10 @@ app.use(express.static("public"))
 
 app.use(cookieParser())
 
+import userRoutes from "./routes/user.route.js"
+
+app.use('/api/v1/users', userRoutes)
+
 app.use((req, res, next) => {
     const error = new apiError(404, "Error Occured")
     next(error)
