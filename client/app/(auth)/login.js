@@ -1,4 +1,4 @@
-import { View, Text, SafeAreaView, StyleSheet, Image, TextInput, Pressable, KeyboardAvoidingView, TouchableWithoutFeedback, Platform, Keyboard } from 'react-native'
+import { View, Text, SafeAreaView, StyleSheet, Image, TextInput, Pressable, KeyboardAvoidingView, TouchableWithoutFeedback, Platform, Keyboard, ScrollView, TouchableOpacity, Button } from 'react-native'
 import React, { useEffect, useState } from 'react'
 import * as Font from 'expo-font'
 import { router } from 'expo-router'
@@ -20,25 +20,26 @@ const Login = () => {
   if (!fontsLoaded) {
     return null
   }
-  
-  const handleLogin = async() => {
-    if(contactNumber.trim().length !== 10){  
-      console.log('Invalid Mobile Number');
-      return;
-    }
-    let res;
-    try {
-      res = await axios({
-        method: 'POST',
-        data: {
-          contactNumber: contactNumber.trim()
-        },
-        url: "http://192.168.0.178:3000/api/v1/users/login"
-      })
-      router.push(`/verify?contactNumber=${contactNumber}`)
-    } catch (error) {
-      console.log(error);
-    }
+
+  const handleLogin = async () => {
+    // if (contactNumber.trim().length !== 10) {
+    //   setContactNumber('')
+    //   console.log('Invalid Mobile Number');
+    //   return;
+    // }
+    // let res;
+    // try {
+    //   res = await axios({
+    //     method: 'POST',
+    //     data: {
+    //       contactNumber: contactNumber.trim()
+    //     },
+    //     url: "http://192.168.0.178:3000/api/v1/users/login"
+    //   })
+    // } catch (error) {
+    //   console.log(error);
+    // }
+    router.push(`/verify?contactNumber=${contactNumber}`)
     setContactNumber('')
   }
 
@@ -46,9 +47,10 @@ const Login = () => {
     <KeyboardAvoidingView
       style={styles.loginContainer}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
     >
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <SafeAreaView style={styles.loginContainer}>
+      <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+        <ScrollView contentContainerStyle={styles.loginContainer}>
           <View style={styles.loginImageContainer}>
             <Image
               source={require('../../assets/images/splash.png')}
@@ -74,28 +76,28 @@ const Login = () => {
                   onChangeText={setContactNumber}
                 />
               </View>
-              <Pressable
+              <TouchableOpacity
                 onPress={handleLogin}
                 style={[styles.loginButton, isLoginPressed && styles.loginButtonPressed]}
                 onPressIn={() => setIsLoginPressed(true)}
                 onPressOut={() => setIsLoginPressed(false)}
               >
                 <Text style={styles.titleText}>Login Now</Text>
-              </Pressable>
+              </TouchableOpacity>
             </View>
           </View>
           <View style={styles.freeTrialContainer}>
             <Text style={styles.freeTrialText}>A chance to explore new experience</Text>
-            <Pressable 
+            <TouchableOpacity
               onPress={() => router.push('/register')}
               style={[styles.freeTrialButton, isTrialPressed && styles.trialButtonPressed]}
               onPressIn={() => setIsTrialPressed(true)}
               onPressOut={() => setIsTrialPressed(false)}
             >
               <Text style={styles.freeTrialButtonText}>Start a Free Trial</Text>
-            </Pressable>
+            </TouchableOpacity>
           </View>
-        </SafeAreaView>
+        </ScrollView>
       </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
   )
@@ -106,16 +108,21 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#f3f3f3"
   },
+  scrollViewContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   loginImageContainer: {
     width: "100%",
-    height: "25%",
+    height: 200,
     backgroundColor: "#f3f3f3",
     justifyContent: "center",
     alignItems: "center"
   },
   loginImage: {
     width: "50%",
-    height: "50%",
+    height: 100,
     objectFit: "contain"
   },
   loginContent: {
@@ -130,7 +137,7 @@ const styles = StyleSheet.create({
     padding: 0,
     margin: 0,
     width: "100%",
-    height: "25%",
+    height: 100,
     alignItems: "center",
     justifyContent: "center"
   },
@@ -149,7 +156,7 @@ const styles = StyleSheet.create({
   },
   loginInput: {
     width: "100%",
-    height: "40%",
+    height: 200,
     justifyContent: "center",
     gap: 1
   },
@@ -186,7 +193,7 @@ const styles = StyleSheet.create({
   },
   freeTrialContainer: {
     width: "100%",
-    height: "15%",
+    height: 120,
     backgroundColor: "#ffffff",
     justifyContent: "center",
     alignItems: "center",
@@ -195,7 +202,7 @@ const styles = StyleSheet.create({
   freeTrialButton: {
     color: "#000000",
     width: "50%",
-    height: "40%",
+    height: 50,
     borderRadius: 30,
     borderColor: "#000000",
     borderWidth: 2,
