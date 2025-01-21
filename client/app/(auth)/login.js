@@ -89,7 +89,7 @@ const Login = () => {
           <View style={styles.freeTrialContainer}>
             <Text style={styles.freeTrialText}>A chance to explore new experience</Text>
             <TouchableOpacity
-              onPress={() => router.push('/register')}
+              onPress={() => router.push('/welcome')}
               style={[styles.freeTrialButton, isTrialPressed && styles.trialButtonPressed]}
               onPressIn={() => setIsTrialPressed(true)}
               onPressOut={() => setIsTrialPressed(false)}

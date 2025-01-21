@@ -9,6 +9,7 @@ const AuthLayout = () => {
     <Stack>
         <Stack.Screen name="login" options={{title: 'Login', headerShown: false}}/>
         <Stack.Screen name="register"/>
+        <Stack.Screen name="welcome" options={{headerShown: false}}/>
         <Stack.Screen 
           name="verify"
           options={{
