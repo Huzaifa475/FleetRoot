@@ -48,13 +48,15 @@ const Login = () => {
         data: {
           contactNumber: contactNumber.trim()
         },
-        url: "http://192.168.0.196:3000/api/v1/users/login"
+        // url: "http://192.168.0.196:3000/api/v1/users/login"
+        url: "https://fleetroot.onrender.com/api/v1/users/login"
       })
       showSnackbar(res?.data?.message)
       setTimeout(() => {
         router.push(`/verify?contactNumber=${contactNumber}&perviousPage=login`)
       }, 1000)
     } catch (error) {
+      console.log(error);
       if (error.response) {
         if (error.response?.data?.message)
           showSnackbar(error.response?.data?.message);

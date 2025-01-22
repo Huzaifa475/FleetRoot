@@ -36,8 +36,12 @@ app.use((err, req, res, next) => {
     })
 })
 
-app.use('/', () => {
+app.get('/', (req, res) => {
     console.log('Server is running')
+    res.status(200).send({
+        "success": true,
+        "msg": "Node server is running"
+    })
 })
 
 export default app
