@@ -2,11 +2,14 @@ import { View, Text, SafeAreaView, StyleSheet, Image, TextInput, Pressable, Keyb
 import React, { useEffect, useState } from 'react'
 import * as Font from 'expo-font'
 import { router } from 'expo-router'
+import { Snackbar } from 'react-native-paper'
 import axios from 'axios'
 
 const Login = () => {
   const [isLoginPressed, setIsLoginPressed] = useState(false)
   const [isTrialPressed, setIsTrialPressed] = useState(false)
+  const [snackbarVisible, setSnackbarVisible] = useState(false)
+  const [snackbarMessage, setSnackbarMessage] = useState('')
   const [contactNumber, setContactNumber] = useState('')
   const [fontsLoaded, setFontsLoaded] = useState(false)
 
@@ -21,36 +24,58 @@ const Login = () => {
     return null
   }
 
+  const showSnackbar = (message) => {
+    setSnackbarMessage(message);
+    setSnackbarVisible(true);
+  };
+
+  const dismissSnackBar = () => {
+    setSnackbarVisible(false);
+    setSnackbarMessage('');
+  }
+
   const handleLogin = async () => {
-    // if (contactNumber.trim().length !== 10) {
-    //   setContactNumber('')
-    //   console.log('Invalid Mobile Number');
-    //   return;
-    // }
-    // let res;
-    // try {
-    //   res = await axios({
-    //     method: 'POST',
-    //     data: {
-    //       contactNumber: contactNumber.trim()
-    //     },
-    //     url: "http://192.168.0.178:3000/api/v1/users/login"
-    //   })
-    // } catch (error) {
-    //   console.log(error);
-    // }
-    router.push(`/verify?contactNumber=${contactNumber}`)
+    Keyboard.dismiss()
+    if (contactNumber.trim().length !== 10) {
+      setContactNumber('')
+      showSnackbar('Contact Number should contain 10 numbers')
+      return;
+    }
+    let res;
+    try {
+      res = await axios({
+        method: 'POST',
+        data: {
+          contactNumber: contactNumber.trim()
+        },
+        url: "http://192.168.0.196:3000/api/v1/users/login"
+      })
+      showSnackbar(res?.data?.message)
+      setTimeout(() => {
+        router.push(`/verify?contactNumber=${contactNumber}&perviousPage=login`)
+      }, 1000)
+    } catch (error) {
+      if (error.response) {
+        if (error.response?.data?.message)
+          showSnackbar(error.response?.data?.message);
+        else
+          showSnackbar(error.request?.statusText);
+      }
+      else if (error.request) {
+        showSnackbar(error.request?.statusText);
+      }
+    }
     setContactNumber('')
   }
 
   return (
-    <KeyboardAvoidingView
-      style={styles.loginContainer}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
-    >
-      <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-        <ScrollView contentContainerStyle={styles.loginContainer}>
+    <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
+      <KeyboardAvoidingView
+        style={styles.loginContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+      >
+        <View contentContainerStyle={styles.loginContainer}>
           <View style={styles.loginImageContainer}>
             <Image
               source={require('../../assets/images/splash.png')}
@@ -89,7 +114,7 @@ const Login = () => {
           <View style={styles.freeTrialContainer}>
             <Text style={styles.freeTrialText}>A chance to explore new experience</Text>
             <TouchableOpacity
-              onPress={() => router.push('/welcome')}
+              onPress={() => router.push('/register')}
               style={[styles.freeTrialButton, isTrialPressed && styles.trialButtonPressed]}
               onPressIn={() => setIsTrialPressed(true)}
               onPressOut={() => setIsTrialPressed(false)}
@@ -97,9 +122,17 @@ const Login = () => {
               <Text style={styles.freeTrialButtonText}>Start a Free Trial</Text>
             </TouchableOpacity>
           </View>
-        </ScrollView>
-      </TouchableWithoutFeedback>
-    </KeyboardAvoidingView>
+        </View>
+        <Snackbar
+          visible={snackbarVisible}
+          onDismiss={dismissSnackBar}
+          duration={1000}
+          style={styles.snackbar}
+        >
+          {snackbarMessage}
+        </Snackbar>
+      </KeyboardAvoidingView>
+    </TouchableWithoutFeedback>
   )
 }
 
@@ -220,6 +253,9 @@ const styles = StyleSheet.create({
   trialButtonPressed: {
     color: "#ffffff",
     backgroundColor: "#d2d2d2"
+  },
+  snackbar: {
+    backgroundColor: '#6f706f',
   }
 })
 

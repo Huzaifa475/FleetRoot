@@ -23,44 +23,87 @@ const generateRefreshAccessToken = async (userId) => {
     }
 }
 
-const register = asyncHandler(async(req, res) => {
+// const register = asyncHandler(async(req, res) => {
 
-    const {firmName, garageType, contactPerson, contactNumber} = req.body
+//     const {firmName, garageType, contactPerson, contactNumber} = req.body
 
-    if(!firmName.trim() || !garageType || !contactPerson.trim() || !contactNumber){
-        throw new apiError(400, 'Please provide all required fields')
-    } 
+//     if(!firmName.trim() || !garageType || !contactPerson.trim() || !contactNumber){
+//         throw new apiError(400, 'Please provide all required fields')
+//     } 
 
-    const isUserExists = await User.findOne({contactNumber})
+//     const isUserExists = await User.findOne({contactNumber})
 
-    if(isUserExists){
-        throw new apiError(403, 'User already exists')
+//     if(isUserExists){
+//         throw new apiError(403, 'User already exists')
+//     }
+    
+//     const otp = 123456
+    
+//     const tempUserRecord = await TempUser.create({
+//         firmName,
+//         garageType,
+//         contactPerson,
+//         contactNumber,
+//         oneTimePassword: otp,
+//         oneTimePasswordExpiry: Date.now() + 5 * 60 * 1000
+//     });
+    
+//     const tempUser = await TempUser.findById(tempUserRecord?._id).select("-oneTimePassword -oneTimePasswordExpiry")
+    
+//     // await sendOtpToPhone(contactNumber, otp)
+//     return res
+//     .status(200)
+//     .json(new apiResponse(200, tempUser, "OTP send successfully"))
+// })
+const register = asyncHandler(async (req, res) => {
+    const { firmName, garageType, contactPerson, contactNumber } = req.body;
+
+    if (!firmName.trim() || !garageType || !contactPerson.trim() || !contactNumber) {
+        throw new apiError(400, 'Please provide all required fields');
     }
-    
+
+    const isUserExists = await User.findOne({ contactNumber });
+    // if (isUserExists) {
+    //     throw new apiError(403, 'User already exists');
+    // }
+
     //const otp = crypto.randomInt(100000, 999999);
-    const otp = 123456
-    
-    const tempUserRecord = await TempUser.create({
-        firmName,
-        garageType,
-        contactPerson,
-        contactNumber,
-        oneTimePassword: otp,
-        oneTimePasswordExpiry: Date.now() + 5 * 60 * 1000
-    });
-    
-    const tempUser = await TempUser.findById(tempUserRecord?._id).select("-oneTimePassword -oneTimePasswordExpiry")
-    
+    const otp = 123456; 
+    const otpExpiry = Date.now() + 5 * 60 * 1000; 
+
+    const existingTempUser = await TempUser.findOne({ contactNumber });
+    if (existingTempUser) {
+        await TempUser.findOneAndUpdate(
+            { contactNumber },
+            { 
+                oneTimePassword: otp,
+                oneTimePasswordExpiry: otpExpiry
+            },
+            { new: true } 
+        );
+    } else {
+        await TempUser.create({
+            firmName,
+            garageType,
+            contactPerson,
+            contactNumber,
+            oneTimePassword: otp,
+            oneTimePasswordExpiry: otpExpiry
+        });
+    }
+
+    const tempUser = await TempUser.findOne({ contactNumber }).select("-oneTimePassword -oneTimePasswordExpiry");
+
     // await sendOtpToPhone(contactNumber, otp)
+
     return res
-    .status(200)
-    .json(new apiResponse(200, tempUser, "OTP send successfully"))
-})
+        .status(200)
+        .json(new apiResponse(200, tempUser, "OTP sent successfully"));
+});
 
 const verifyOtpRegister = asyncHandler(async(req, res) => {
 
     const {contactNumber, otp} = req.body
-
     if(!otp){
         throw new apiError(400, 'Please enter OTP')
     }
@@ -75,12 +118,17 @@ const verifyOtpRegister = asyncHandler(async(req, res) => {
         throw new apiError(404, 'Temporary user not found');
     }
 
-    if (tempUser.oneTimePassword !== otp) {
+    if (tempUser.oneTimePassword.toString() !== otp) {
         throw new apiError(400, 'Invalid OTP');
     }
 
     if (tempUser.oneTimePasswordExpiry < Date.now()) {
         throw new apiError(400, 'OTP Expired');
+    }
+
+    const isUserExists = await User.findOne({ contactNumber });
+    if (isUserExists) {
+        throw new apiError(403, 'User already exists');
     }
 
     const newUser = await User.create({
@@ -159,7 +207,7 @@ const verifyOtpLogin = asyncHandler(async (req, res) => {
         throw new apiError(400, 'User not found')
     }
 
-    if(user.oneTimePassword !== otp){
+    if(user.oneTimePassword.toString() !== otp){
         throw new apiError(400, 'Invalid OTP')
     }
 

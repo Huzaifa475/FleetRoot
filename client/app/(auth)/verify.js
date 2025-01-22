@@ -1,19 +1,17 @@
+import axios from 'axios';
+import { router } from 'expo-router';
+import { useLocalSearchParams, useSearchParams } from 'expo-router/build/hooks';
 import React, { useEffect, useRef, useState } from 'react';
-import {
-  View,
-  TextInput,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  ScrollView,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import { View, TextInput, StyleSheet, Text, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
+import { Snackbar } from 'react-native-paper';
 
 const Verify = () => {
+  const { contactNumber, perviousPage } = useLocalSearchParams()
   const [isPressed, setIsPressed] = useState(false)
-  const [otp, setOtp] = useState(new Array(6).fill(''));
-  const inputs = useRef([]);
+  const [otp, setOtp] = useState(new Array(6).fill(''))
+  const [snackbarVisible, setSnackbarVisible] = useState(false)
+  const [snackbarMessage, setSnackbarMessage] = useState('')
+  const inputs = useRef([])
 
   useEffect(() => {
     const showKeyboard = async () => {
@@ -39,56 +37,137 @@ const Verify = () => {
       inputs.current[index - 1].focus();
     }
   };
+
+  const showSnackbar = (message) => {
+    setSnackbarMessage(message);
+    setSnackbarVisible(true);
+  };
+
+  const dismissSnackBar = () => {
+    setSnackbarVisible(false);
+    setSnackbarMessage('');
+  }
+
+  const handleVerify = async () => {
+    Keyboard.dismiss()
+    const OTP = otp.join('')
+    if (OTP.trim().length !== 6) {
+      showSnackbar('Please enter a valid 6-digit OTP');
+      return;
+    }
+    if (perviousPage === 'register') {
+      let res
+      try {
+        res = await axios({
+          method: 'POST',
+          data: {
+            contactNumber,
+            otp: OTP.trim()
+          },
+          url: "http://192.168.0.196:3000/api/v1/users/verifyOtpRegister"
+        })
+        showSnackbar(res?.data?.message)
+        setTimeout(() => {
+          router.replace('/welcome')
+        }, 1000)
+      } catch (error) {
+        if (error.response) {
+          if (error.response?.data?.message)
+            showSnackbar(error.response?.data?.message);
+          else
+            showSnackbar(error.request?.statusText);
+        }
+        else if (error.request) {
+          showSnackbar(error.request?.statusText);
+        }
+      }
+    }
+    else {
+      let res
+      try {
+        res = await axios({
+          method: 'POST',
+          data: {
+            contactNumber,
+            otp: OTP.trim()
+          },
+          url: "http://192.168.0.196:3000/api/v1/users/verifyOtpLogin"
+        })
+        showSnackbar(res?.data?.message)
+        setTimeout(() => {
+          router.replace('/welcome')
+        }, 1000)
+      } catch (error) {
+        if (error.response) {
+          if (error.response?.data?.message)
+            showSnackbar(error.response?.data?.message);
+          else
+            showSnackbar(error.request?.statusText);
+        }
+        else if (error.request) {
+          showSnackbar(error.request?.statusText);
+        }
+      }
+    }
+    setOtp(new Array(6).fill(''));
+    setTimeout(() => {
+      inputs.current[0]?.focus();
+    }, 1000);
+  }
+
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
     >
-        <ScrollView contentContainerStyle={styles.container}>
-
-          <View style={styles.verificationContent}>
-            <Text style={styles.verificationText}>Enter the 6-digit code sent to</Text>
-            <Text style={styles.verificationText}>+91 123 456 7890</Text>
-
-            <View style={styles.verificationInput}>
-              <Text style={styles.verificationLabel}>Enter Code</Text>
-              <View style={styles.inputContainer}>
-                {otp.map((digit, index) => (
-                  <TextInput
-                    key={index}
-                    keyboardType="number-pad"
-                    maxLength={1}
-                    value={otp[index]}
-                    onChangeText={(value) => handleChangeText(value, index)}
-                    onKeyPress={(e) => handleKeyPress(e, index)}
-                    ref={(ref) => (inputs.current[index] = ref)}
-                    style={styles.input}
-                  />
-                ))}
-              </View>
+      <View contentContainerStyle={styles.container}>
+        <View style={styles.verificationContent}>
+          <Text style={styles.verificationText}>Enter the 6-digit code sent to</Text>
+          <Text style={styles.verificationText}>+91 {contactNumber}</Text>
+          <View style={styles.verificationInput}>
+            <Text style={styles.verificationLabel}>Enter Code</Text>
+            <View style={styles.inputContainer}>
+              {otp.map((digit, index) => (
+                <TextInput
+                  key={index}
+                  keyboardType="number-pad"
+                  maxLength={1}
+                  value={otp[index]}
+                  onChangeText={(value) => handleChangeText(value, index)}
+                  onKeyPress={(e) => handleKeyPress(e, index)}
+                  ref={(ref) => (inputs.current[index] = ref)}
+                  style={styles.input}
+                />
+              ))}
             </View>
-
-            <View style={styles.verificationResend}>
-              <Text style={styles.verificationResendText}>Didn't get a Code?</Text>
-              <TouchableOpacity>
-                <Text style={styles.verificationResendButtonText}>Re-Send Now</Text>
-              </TouchableOpacity>
-            </View>
-
-            <View style={styles.verificationButtonContainer}>
-              <TouchableOpacity 
-                style={[styles.verificationButton]}
-                onPressIn={() => setIsPressed(true)}
-                onPressOut={() => setIsPressed(false)}
-              >
-                <Text style={[styles.verificationButtonText, isPressed && styles.verificationButtonPressed]}>Get a FREE Trial Now</Text>
-              </TouchableOpacity>
-            </View>
-
           </View>
-
-        </ScrollView>
+          <View style={styles.verificationResend}>
+            <Text style={styles.verificationResendText}>Didn't get a Code?</Text>
+            <TouchableOpacity>
+              <Text style={styles.verificationResendButtonText}>Re-Send Now</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.verificationButtonContainer}>
+            <TouchableOpacity
+              style={[styles.verificationButton]}
+              onPressIn={() => setIsPressed(true)}
+              onPressOut={() => setIsPressed(false)}
+              onPress={handleVerify}
+            >
+              <Text style={[styles.verificationButtonText, isPressed && styles.verificationButtonPressed]}>Get a FREE Trial Now</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+        <Snackbar
+          visible={snackbarVisible}
+          onDismiss={dismissSnackBar}
+          duration={1000}
+          style={styles.snackbar}
+        >
+          {snackbarMessage}
+        </Snackbar>
+      </View>
     </KeyboardAvoidingView>
   );
 };
@@ -172,6 +251,9 @@ const styles = StyleSheet.create({
   verificationButtonText: {
     color: "#ffffff",
     fontSize: 20,
+  },
+  snackbar: {
+    backgroundColor: '#6f706f',
   }
 });
 
